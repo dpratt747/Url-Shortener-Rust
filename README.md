@@ -13,3 +13,6 @@ curl --location 'http://localhost:8080/<short url path>'
 ```bash
 curl --location 'http://localhost:8080/all'
 ```
+
+## Swagger page:
+http://localhost:8080/swagger-ui/
