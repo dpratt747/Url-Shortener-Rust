@@ -1,14 +1,14 @@
-use crate::persistence::database::DatabaseAlg;
+use crate::persistence::database::{DatabaseAlg, LongUrl, ShortUrl};
 use rand::distr::Alphanumeric;
 use rand::{rng, Rng};
 use std::collections::HashMap;
 
 pub trait UrlShortenerServiceAlg {
-    fn store_long_url_and_get_short_url(&mut self, long_url: String) -> String;
+    fn store_long_url_and_get_short_url(&mut self, long_url: LongUrl) -> ShortUrl;
 
-    fn get_all(&self) -> HashMap<String, String>;
+    fn get_all(&self) -> HashMap<LongUrl, ShortUrl>;
 
-    fn get_long_url_with_short(&self, short_url: String) -> Option<String>;
+    fn get_long_url_with_short(&self, short_url: ShortUrl) -> Option<LongUrl>;
 }
 
 pub struct UrlShortenerService {
@@ -16,17 +16,17 @@ pub struct UrlShortenerService {
 }
 
 impl UrlShortenerServiceAlg for UrlShortenerService {
-    fn store_long_url_and_get_short_url(&mut self, long_url: String) -> String {
-        let short_url_path = Self::generate_alphanumeric_string(5);
-        self.db.store(long_url, short_url_path.to_string());
+    fn store_long_url_and_get_short_url(&mut self, long_url: LongUrl) -> ShortUrl {
+        let short_url_path = ShortUrl(Self::generate_alphanumeric_string(5));
+        self.db.store(long_url, short_url_path.clone());
         short_url_path
     }
 
-    fn get_all(&self) -> HashMap<String, String> {
+    fn get_all(&self) -> HashMap<LongUrl, ShortUrl> {
         self.db.get_all()
     }
 
-    fn get_long_url_with_short(&self, short_url: String) -> Option<String> {
+    fn get_long_url_with_short(&self, short_url: ShortUrl) -> Option<LongUrl> {
         self.db.get_long_url_with_short_url(short_url)
     }
 }

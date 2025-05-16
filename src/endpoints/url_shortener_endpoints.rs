@@ -5,6 +5,7 @@ use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::Deserialize;
 use std::sync::Mutex;
 use utoipa::OpenApi;
+use crate::persistence::database::{LongUrl, ShortUrl};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -12,11 +13,12 @@ use utoipa::OpenApi;
     components(schemas(ShortenUrlRequest))
 )]
 pub struct ApiDoc;
+// https://chat.deepseek.com/a/chat/s/48e4c1e4-630e-4853-a228-66f5408de5a7
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, utoipa::ToSchema)]
 struct ShortenUrlRequest {
-    longUrl: String,
+    longUrl: LongUrl,
 }
 
 #[utoipa::path(
@@ -66,15 +68,15 @@ async fn shorten(
 #[get("/{short_url_path}")]
 async fn redirect_to_long_url(
     service: web::Data<Mutex<UrlShortenerService>>,
-    path: web::Path<String>,
+    path: web::Path<ShortUrl>,
 ) -> impl Responder {
     let long_url_opt = service
         .lock()
         .unwrap()
-        .get_long_url_with_short(path.to_string());
+        .get_long_url_with_short(path.into_inner());
 
     match long_url_opt {
-        Some(value) => Either::Left(Redirect::to(value).temporary()),
+        Some(value) => Either::Left(Redirect::to(value.0).temporary()),
         None => Either::Right(HttpResponse::BadRequest().body("Url not found")),
     }
 }
