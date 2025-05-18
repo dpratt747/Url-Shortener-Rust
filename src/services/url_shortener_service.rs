@@ -23,11 +23,11 @@ impl UrlShortenerServiceAlg for UrlShortenerService {
     }
 
     fn get_all(&self) -> HashMap<LongUrl, ShortUrl> {
-        self.db.get_all()
+        self.db.get_all_within_cutoff_time()
     }
 
     fn get_long_url_with_short(&self, short_url: ShortUrl) -> Option<LongUrl> {
-        self.db.get_long_url_with_short_url(short_url)
+        self.db.get_long_url_with_short_url_within_cutoff_time(short_url)
     }
 }
 

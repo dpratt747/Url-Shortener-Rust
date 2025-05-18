@@ -77,6 +77,6 @@ async fn redirect_to_long_url(
 
     match long_url_opt {
         Some(value) => Either::Left(Redirect::to(value.0).temporary()),
-        None => Either::Right(HttpResponse::BadRequest().body("Url not found")),
+        None => Either::Right(HttpResponse::BadRequest().json("Url not found. Might have expired or it was not created")),
     }
 }
