@@ -26,7 +26,7 @@ impl DatabaseAlg for InMemoryDatabase {
     }
 
     fn get_all(&self) -> HashMap<LongUrl, ShortUrl> {
-        let cutoff = Local::now() - Duration::minutes(30);
+        let cutoff = Local::now() - Self::CUTOFF_DURATION;
 
         self.store
             .clone()
@@ -37,7 +37,7 @@ impl DatabaseAlg for InMemoryDatabase {
     }
 
     fn get_long_url_with_short_url(&self, short_url: ShortUrl) -> Option<LongUrl> {
-        let cutoff = Local::now() - Duration::minutes(30);
+        let cutoff = Local::now() - Self::CUTOFF_DURATION;
 
         self.store
             .iter()
@@ -53,6 +53,8 @@ impl DatabaseAlg for InMemoryDatabase {
 }
 
 impl InMemoryDatabase {
+    const CUTOFF_DURATION: Duration = Duration::minutes(30);
+
     // like a companion object
     pub fn new(in_memory_store: HashMap<LongUrl, (ShortUrl, DateTime<Local>)>) -> Self {
         InMemoryDatabase {
