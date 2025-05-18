@@ -1,9 +1,8 @@
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Duration, Local};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-// use utoipa::openapi::KnownFormat::Duration;
-use utoipa::PartialSchema;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
 pub(crate) struct ShortUrl(pub(crate) String);
 
@@ -42,21 +41,29 @@ impl DatabaseAlg for InMemoryDatabase {
     }
 
     fn get_all(&self) -> HashMap<LongUrl, ShortUrl> {
+        let cutoff = Local::now() - Duration::minutes(30);
+
         self.store
             .clone()
             .into_iter()
+            .filter(|(_, (_, timestamp))| *timestamp >= cutoff)
             .map(|(long_url, (short_url, _))| (long_url, short_url))
             .collect()
     }
 
     fn get_long_url_with_short_url(&self, short_url: ShortUrl) -> Option<LongUrl> {
-        self.store.iter().find_map(|(key, (url, dt))| {
-            if url == &short_url {
-                Some(key.clone())
-            } else {
-                None
-            }
-        })
+        let cutoff = Local::now() - Duration::minutes(30);
+
+        self.store
+            .iter()
+            .filter(|(_, (_, timestamp))| *timestamp >= cutoff)
+            .find_map(|(key, (url, _))| {
+                if url == &short_url {
+                    Some(key.clone())
+                } else {
+                    None
+                }
+            })
     }
 }
 
@@ -66,11 +73,5 @@ impl InMemoryDatabase {
         InMemoryDatabase {
             store: in_memory_store,
         }
-    }
-
-    fn is_30_mins_or_older_local(dt: &DateTime<Local>) -> bool {
-        let now = Local::now();
-        let thirty_minutes = chrono::Duration::minutes(30);
-        now.signed_duration_since(dt) >= thirty_minutes
     }
 }
