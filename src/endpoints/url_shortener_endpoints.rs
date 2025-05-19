@@ -76,7 +76,7 @@ async fn redirect_to_long_url(
         .get_long_url_with_short(path.into_inner());
 
     match long_url_opt {
-        Some(value) => Either::Left(Redirect::to(value.0).temporary()),
-        None => Either::Right(HttpResponse::BadRequest().json("Url not found. Might have expired or it was not created")),
+        Some(value) => Either::Right(Redirect::to(value.0).temporary()),
+        None => Either::Left(HttpResponse::BadRequest().json("Url not found. Might have expired or it was not created")),
     }
 }
