@@ -20,8 +20,11 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(service_data.clone())
-            .service(get_all)
-            .service(shorten)
+            .service(
+                web::scope("/v1")
+                    .service(get_all)
+                    .service(shorten)
+            )
             .service(redirect_to_long_url)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")

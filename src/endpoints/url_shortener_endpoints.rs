@@ -23,7 +23,7 @@ struct ShortenUrlRequest {
 
 #[utoipa::path(
     get,
-    path = "/all",
+    path = "/v1/all",
     responses(
         (status = 200, description = "Success response")
     )
@@ -36,7 +36,7 @@ async fn get_all(service: web::Data<Mutex<UrlShortenerService>>) -> impl Respond
 
 #[utoipa::path(
     post,
-    path = "/shorten",
+    path = "/v1/shorten",
     request_body = ShortenUrlRequest,
     responses(
         (status = 200, description = "Success response")
@@ -50,8 +50,10 @@ async fn shorten(
     let short_url = service
         .lock()
         .unwrap()
-        .store_long_url_and_get_short_url(info.longUrl.clone());
-    HttpResponse::Ok().json(short_url)
+        .store_long_url_and_get_short_url(info.longUrl.clone())
+        .0;
+    let full_endpoint = format!("http://localhost:8080/{short_url}");
+    HttpResponse::Ok().json(full_endpoint)
 }
 
 #[utoipa::path(
@@ -76,7 +78,7 @@ async fn redirect_to_long_url(
         .get_long_url_with_short(path.into_inner());
 
     match long_url_opt {
-        Some(value) => Either::Right(Redirect::to(value.0).temporary()),
+        Some(long_url) => Either::Right(Redirect::to(long_url.0).temporary()),
         None => Either::Left(HttpResponse::BadRequest().json("Url not found. Might have expired or it was not created")),
     }
 }
