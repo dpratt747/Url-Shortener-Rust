@@ -53,7 +53,7 @@ async fn shorten(
         .store_long_url_and_get_short_url(info.longUrl.clone())
         .0;
     let full_endpoint = format!("http://localhost:8080/{short_url}");
-    HttpResponse::Ok().json(full_endpoint)
+    HttpResponse::Created().json(full_endpoint)
 }
 
 #[utoipa::path(
