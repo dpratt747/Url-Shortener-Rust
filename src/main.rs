@@ -17,6 +17,14 @@ async fn main() -> std::io::Result<()> {
     let service = UrlShortenerService::new(Box::new(db.clone()));
     let service_data = web::Data::new(Mutex::new(service));
 
+    // Default to localhost, use 0.0.0.0 if IN_DOCKER is set
+    let addr = if std::env::var("IN_DOCKER").is_ok() {
+        "0.0.0.0"
+    } else {
+        "127.0.0.1"
+    };
+
+
     HttpServer::new(move || {
         App::new()
             .app_data(service_data.clone())
@@ -31,7 +39,7 @@ async fn main() -> std::io::Result<()> {
                     .url("/api-doc/openapi.json", ApiDoc::openapi()),
             )
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind((addr, 8080))?// docker
     .run()
     .await
 }

@@ -20,3 +20,20 @@ http://localhost:8080/swagger-ui/
 ```bash
 cargo run
 ```
+
+---
+## Docker:
+
+```bash
+docker build -t url_shortener_rust .
+
+docker run --name url_shortener_rust_container url_shortener_rust
+docker run -d --name url_shortener_rust_container url_shortener_rust
+
+```
+
+### Remove all containers:
+```bash
+docker rm -f $(docker ps -aq)
+docker system prune -af
+```
