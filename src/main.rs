@@ -8,6 +8,8 @@ use actix_web::{web, App, HttpServer};
 use persistence::database::InMemoryDatabase;
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::time::Duration;
+use tokio::time::sleep;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -24,22 +26,28 @@ async fn main() -> std::io::Result<()> {
         "127.0.0.1"
     };
 
+    println!("Starting server on {}", addr);
 
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         App::new()
             .app_data(service_data.clone())
-            .service(
-                web::scope("/v1")
-                    .service(get_all)
-                    .service(shorten)
-            )
+            .service(web::scope("/v1").service(get_all).service(shorten))
             .service(redirect_to_long_url)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-doc/openapi.json", ApiDoc::openapi()),
             )
     })
-    .bind((addr, 8080))?// docker
-    .run()
-    .await
+    .bind((addr, 8080))? // docker
+    .run();
+
+    // Spawn a task to log after the server is running
+    tokio::spawn(async move {
+        // Small delay to ensure the server is fully ready
+        sleep(Duration::from_millis(500)).await;
+        println!("The server has been started");
+    });
+
+    // Await the server (block until shutdown)
+    server.await
 }

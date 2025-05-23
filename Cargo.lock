@@ -10,6 +10,7 @@ dependencies = [
  "chrono",
  "rand",
  "serde",
+ "tokio",
  "utoipa",
  "utoipa-swagger-ui",
 ]
