@@ -6,7 +6,8 @@ use chrono::{DateTime, Local};
 use diesel::prelude::*;
 use diesel::PgConnection;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::Arc;
+use diesel::r2d2::{ConnectionManager, Pool};
 
 pub trait DatabaseAlg: Send + Sync {
     fn store(&mut self, long_url_value: url::LongUrl, short_url_value: url::ShortUrl);
@@ -21,7 +22,7 @@ pub struct InMemoryDatabase {
 
 // #[derive(Clone)]
 pub struct UrlDatabase {
-    connection: Arc<Mutex<PgConnection>>,
+    connection: Arc<Pool<ConnectionManager<PgConnection>>>,
 }
 
 impl DatabaseAlg for UrlDatabase {
@@ -30,12 +31,10 @@ impl DatabaseAlg for UrlDatabase {
     }
 
     fn get_all(&self) -> Vec<(url::LongUrl, url::ShortUrl)> {
-        let mut conn: MutexGuard<PgConnection> = self
-            .connection
-            .lock()
-            .expect("couldn't get connection lock");
+        let mut conn = self.connection.get().expect("couldn't get connection from pool");
+        
         urls.select((long_url, short_url))
-            .load::<(url::LongUrl, url::ShortUrl)>(&mut *conn)
+            .load::<(url::LongUrl, url::ShortUrl)>(&mut conn)
             .expect("couldn't get urls")
     }
 
@@ -46,7 +45,7 @@ impl DatabaseAlg for UrlDatabase {
 
 impl UrlDatabase {
     // like a companion object
-    pub fn new(conn: Arc<Mutex<PgConnection>>) -> Self {
+    pub fn new(conn: Arc<Pool<ConnectionManager<PgConnection>>>) -> Self {
         Self { connection: conn }
     }
 }

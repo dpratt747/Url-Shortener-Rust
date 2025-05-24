@@ -12,6 +12,7 @@ use crate::services::url_shortener_service::UrlShortenerService;
 use crate::persistence::database::{DatabaseAlg, UrlDatabase};
 use actix_web::{web, App, HttpServer};
 use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use persistence::database::InMemoryDatabase;
 use std::collections::HashMap;
@@ -33,20 +34,19 @@ async fn main() -> std::io::Result<()> {
     pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
     // test db here:
+    let manager = ConnectionManager::<PgConnection>::new(db_configuration.url());
+    let pool: Pool<ConnectionManager<PgConnection>> = Pool::builder()
+        .build(manager)
+        .expect("Failed to create pool");
 
-    let mut conn = PgConnection::establish(&db_configuration.url())
-        .expect(&format!("Error connecting to {}", db_configuration.url()));
+    let mut connection = pool.get().expect("Failed to get connection");
+    connection.run_pending_migrations(MIGRATIONS).expect(&format!("Error running migrations: {}", db_configuration.url()));
     
-
-    conn.run_pending_migrations(MIGRATIONS).expect(&format!(
-        "Error running migrations: {}",
-        db_configuration.url()
-    ));
+    let shared_pool = Arc::new(pool);
+    let url_database = UrlDatabase::new(Arc::clone(&shared_pool));
     
-    let shared_conn = Arc::new(Mutex::new(conn));
-    let url_database = UrlDatabase::new(Arc::clone(&shared_conn));
-    
-    println!("Testing database connection... {:?}", url_database.get_all());
+    println!("Testing database queries... {:?}", url_database.get_all());
+    println!("Testing database queries... {:?}", url_database.get_all().len());
     
     // Default to localhost, use 0.0.0.0 if IN_DOCKER is set
     let addr = if env::var("IN_DOCKER").is_ok() {
