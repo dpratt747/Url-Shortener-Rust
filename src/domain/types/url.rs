@@ -1,3 +1,4 @@
+use std::fmt;
 use diesel::{AsExpression, FromSqlRow};
 use serde::{Deserialize, Serialize};
 
@@ -56,6 +57,12 @@ where
 )]
 #[diesel(sql_type = diesel::sql_types::Text)]
 pub struct ShortUrl(pub(crate) String);
+
+impl fmt::Display for ShortUrl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)  // Assuming ShortUrl wraps a String or displayable type
+    }
+}
 
 // Implement ToSql for database writes
 impl<DB> diesel::serialize::ToSql<diesel::sql_types::Text, DB> for ShortUrl

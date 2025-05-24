@@ -9,13 +9,11 @@ use crate::config::db_config::DbConfig;
 use crate::endpoints::url_shortener_endpoints::{get_all, redirect_to_long_url, shorten, ApiDoc};
 use crate::services::url_shortener_service::UrlShortenerService;
 
-use crate::persistence::database::{DatabaseAlg, UrlDatabase};
+use crate::persistence::database::UrlDatabase;
 use actix_web::{web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
-use persistence::database::InMemoryDatabase;
-use std::collections::HashMap;
 use std::env;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -26,28 +24,27 @@ use utoipa_swagger_ui::SwaggerUi;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let db_configuration = DbConfig::from_env();
-
-    let db = InMemoryDatabase::new(HashMap::new());
-    let service = UrlShortenerService::new(Box::new(db.clone()));
-    let service_data = web::Data::new(Mutex::new(service));
-
     pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
-    // test db here:
     let manager = ConnectionManager::<PgConnection>::new(db_configuration.url());
     let pool: Pool<ConnectionManager<PgConnection>> = Pool::builder()
         .build(manager)
         .expect("Failed to create pool");
 
     let mut connection = pool.get().expect("Failed to get connection");
-    connection.run_pending_migrations(MIGRATIONS).expect(&format!("Error running migrations: {}", db_configuration.url()));
-    
+    connection
+        .run_pending_migrations(MIGRATIONS)
+        .expect(&format!(
+            "Error running migrations: {}",
+            db_configuration.url()
+        ));
+
     let shared_pool = Arc::new(pool);
     let url_database = UrlDatabase::new(Arc::clone(&shared_pool));
-    
-    println!("Testing database queries... {:?}", url_database.get_all());
-    println!("Testing database queries... {:?}", url_database.get_all().len());
-    
+
+    let service = UrlShortenerService::new(Box::new(url_database)); // todo: remove clone once testing has finished
+    let service_data = web::Data::new(Mutex::new(service));
+
     // Default to localhost, use 0.0.0.0 if IN_DOCKER is set
     let addr = if env::var("IN_DOCKER").is_ok() {
         "0.0.0.0"

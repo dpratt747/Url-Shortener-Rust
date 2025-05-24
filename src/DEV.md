@@ -16,3 +16,20 @@ diesel migration generate create_urls
 diesel migration run --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db
 diesel migration redo
 ```
+
+----
+
+```rust
+
+            match e {
+              ServiceError::StorageError(storage_error) => {
+                  match storage_error {
+                      StorageError::ConnectionFailed(msg) => {
+                          println!("{msg}");
+                      }
+                      other => println!("{:?}", other),
+                  }
+              }  
+            };
+
+```
