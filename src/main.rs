@@ -1,13 +1,22 @@
+mod config;
+mod domain;
 mod endpoints;
 mod persistence;
+mod schema;
 mod services;
 
+use crate::config::db_config::DbConfig;
 use crate::endpoints::url_shortener_endpoints::{get_all, redirect_to_long_url, shorten, ApiDoc};
 use crate::services::url_shortener_service::UrlShortenerService;
+
+use crate::persistence::database::{DatabaseAlg, UrlDatabase};
 use actix_web::{web, App, HttpServer};
+use diesel::prelude::*;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use persistence::database::InMemoryDatabase;
 use std::collections::HashMap;
-use std::sync::Mutex;
+use std::env;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::time::sleep;
 use utoipa::OpenApi;
@@ -15,12 +24,32 @@ use utoipa_swagger_ui::SwaggerUi;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let db_configuration = DbConfig::from_env();
+
     let db = InMemoryDatabase::new(HashMap::new());
     let service = UrlShortenerService::new(Box::new(db.clone()));
     let service_data = web::Data::new(Mutex::new(service));
 
+    pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
+
+    // test db here:
+
+    let mut conn = PgConnection::establish(&db_configuration.url())
+        .expect(&format!("Error connecting to {}", db_configuration.url()));
+    
+
+    conn.run_pending_migrations(MIGRATIONS).expect(&format!(
+        "Error running migrations: {}",
+        db_configuration.url()
+    ));
+    
+    let shared_conn = Arc::new(Mutex::new(conn));
+    let url_database = UrlDatabase::new(Arc::clone(&shared_conn));
+    
+    println!("Testing database connection... {:?}", url_database.get_all());
+    
     // Default to localhost, use 0.0.0.0 if IN_DOCKER is set
-    let addr = if std::env::var("IN_DOCKER").is_ok() {
+    let addr = if env::var("IN_DOCKER").is_ok() {
         "0.0.0.0"
     } else {
         "127.0.0.1"

@@ -1,63 +1,86 @@
-use chrono::{DateTime, Duration, Local};
-use serde::{Deserialize, Serialize};
+use crate::domain::types::url;
+use crate::schema::urls::dsl::urls;
+use crate::schema::urls::{long_url, short_url};
+
+use chrono::{DateTime, Local};
+use diesel::prelude::*;
+use diesel::PgConnection;
 use std::collections::HashMap;
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
-pub(crate) struct ShortUrl(pub(crate) String);
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
-pub(crate) struct LongUrl(pub(crate) String);
+use std::sync::{Arc, Mutex, MutexGuard};
 
 pub trait DatabaseAlg: Send + Sync {
-    fn store(&mut self, long_url: LongUrl, short_url: ShortUrl);
-    fn get_all_within_cutoff_time(&self) -> HashMap<LongUrl, ShortUrl>;
-    fn get_long_url_with_short_url_within_cutoff_time(&self, short_url: ShortUrl) -> Option<LongUrl>;
+    fn store(&mut self, long_url_value: url::LongUrl, short_url_value: url::ShortUrl);
+    fn get_all(&self) -> Vec<(url::LongUrl, url::ShortUrl)>;
+    fn get_long_url_with_short_url(&self, short_url: url::ShortUrl) -> Option<url::LongUrl>;
 }
 
 #[derive(Clone)]
 pub struct InMemoryDatabase {
-    store: HashMap<LongUrl, (ShortUrl, DateTime<Local>)>,
+    store: HashMap<url::LongUrl, (url::ShortUrl, DateTime<Local>)>,
+}
+
+// #[derive(Clone)]
+pub struct UrlDatabase {
+    connection: Arc<Mutex<PgConnection>>,
+}
+
+impl DatabaseAlg for UrlDatabase {
+    fn store(&mut self, long_url_value: url::LongUrl, short_url_value: url::ShortUrl) {
+        todo!()
+    }
+
+    fn get_all(&self) -> Vec<(url::LongUrl, url::ShortUrl)> {
+        let mut conn: MutexGuard<PgConnection> = self
+            .connection
+            .lock()
+            .expect("couldn't get connection lock");
+        urls.select((long_url, short_url))
+            .load::<(url::LongUrl, url::ShortUrl)>(&mut *conn)
+            .expect("couldn't get urls")
+    }
+
+    fn get_long_url_with_short_url(&self, short_url_value: url::ShortUrl) -> Option<url::LongUrl> {
+        todo!()
+    }
+}
+
+impl UrlDatabase {
+    // like a companion object
+    pub fn new(conn: Arc<Mutex<PgConnection>>) -> Self {
+        Self { connection: conn }
+    }
 }
 
 impl DatabaseAlg for InMemoryDatabase {
-    fn store(&mut self, long_url: LongUrl, short_url: ShortUrl) -> () {
+    fn store(&mut self, long_url_value: url::LongUrl, short_url_value: url::ShortUrl) -> () {
         // save datetime.now
-        self.store.insert(long_url, (short_url, Local::now()));
+        self.store
+            .insert(long_url_value, (short_url_value, Local::now()));
     }
 
-    fn get_all_within_cutoff_time(&self) -> HashMap<LongUrl, ShortUrl> {
-        let cutoff = Local::now() - Self::CUTOFF_DURATION;
-
+    fn get_all(&self) -> Vec<(url::LongUrl, url::ShortUrl)> {
         self.store
             .clone()
-            .into_iter()
-            .filter(|(_, (_, timestamp))| *timestamp >= cutoff)
-            .map(|(long_url, (short_url, _))| (long_url, short_url))
+            .iter()
+            .map(|(k, (v, _))| (k.clone(), v.clone()))
             .collect()
     }
 
-    fn get_long_url_with_short_url_within_cutoff_time(&self, short_url: ShortUrl) -> Option<LongUrl> {
-        let cutoff = Local::now() - Self::CUTOFF_DURATION;
-
-        self.store
-            .iter()
-            .filter(|(_, (_, timestamp))| *timestamp >= cutoff)
-            .find_map(|(key, (url, _))| {
-                if url == &short_url {
-                    Some(key.clone())
-                } else {
-                    None
-                }
-            })
+    fn get_long_url_with_short_url(&self, short_url_value: url::ShortUrl) -> Option<url::LongUrl> {
+        self.store.iter().find_map(|(key, (url, _))| {
+            if url == &short_url_value {
+                Some(key.clone())
+            } else {
+                None
+            }
+        })
     }
 }
 
 impl InMemoryDatabase {
-    const CUTOFF_DURATION: Duration = Duration::minutes(30);
-
     // like a companion object
-    pub fn new(in_memory_store: HashMap<LongUrl, (ShortUrl, DateTime<Local>)>) -> Self {
-        InMemoryDatabase {
+    pub fn new(in_memory_store: HashMap<url::LongUrl, (url::ShortUrl, DateTime<Local>)>) -> Self {
+        Self {
             store: in_memory_store,
         }
     }

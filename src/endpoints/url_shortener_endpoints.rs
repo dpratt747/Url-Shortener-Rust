@@ -1,11 +1,12 @@
+use crate::domain::types::url;
 use crate::services::url_shortener_service::{UrlShortenerService, UrlShortenerServiceAlg};
+
 use actix_web::web::Redirect;
 use actix_web::Either;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::Deserialize;
 use std::sync::Mutex;
 use utoipa::OpenApi;
-use crate::persistence::database::{LongUrl, ShortUrl};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -18,7 +19,7 @@ pub struct ApiDoc;
 #[allow(non_snake_case)]
 #[derive(Deserialize, utoipa::ToSchema)]
 struct ShortenUrlRequest {
-    longUrl: LongUrl,
+    longUrl: url::LongUrl,
 }
 
 #[utoipa::path(
@@ -70,7 +71,7 @@ async fn shorten(
 #[get("/{short_url_path}")]
 async fn redirect_to_long_url(
     service: web::Data<Mutex<UrlShortenerService>>,
-    path: web::Path<ShortUrl>,
+    path: web::Path<url::ShortUrl>,
 ) -> impl Responder {
     let long_url_opt = service
         .lock()
@@ -79,6 +80,9 @@ async fn redirect_to_long_url(
 
     match long_url_opt {
         Some(long_url) => Either::Right(Redirect::to(long_url.0).temporary()),
-        None => Either::Left(HttpResponse::BadRequest().json("Url not found. Might have expired or it was not created")),
+        None => Either::Left(
+            HttpResponse::BadRequest()
+                .json("Url not found. Might have expired or it was not created"),
+        ),
     }
 }
