@@ -18,7 +18,7 @@ curl --location 'http://localhost:8080/all'
 http://localhost:8080/swagger-ui/
 
 ```bash
-cargo run
+cargo run -r
 ```
 
 ---

@@ -1,5 +1,7 @@
 ```bash
 docker compose up --build --force-recreate app
+
+docker-compose down --rmi all --volumes
 ```
 
 [Diesel](https://diesel.rs/)
