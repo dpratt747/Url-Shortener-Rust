@@ -22,6 +22,6 @@ impl DbConfig {
     }
 
     pub(crate) fn url(&self) -> String {
-        format!("postgres://{}:{}@{}/{}", self.user, self.password, self.host, self.database_name)
+        format!("postgres://{}:{}@{}:{}/{}", self.user, self.password, self.host, self.port, self.database_name)
     }
 }
