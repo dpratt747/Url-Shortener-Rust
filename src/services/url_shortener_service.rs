@@ -1,16 +1,16 @@
 use crate::persistence::database::DatabaseAlg;
-use crate::domain::types::url;
+use crate::domain::types::objects;
 use crate::domain::errors::domain_errors;
 use rand::distr::Alphanumeric;
 use rand::{rng, Rng};
 use crate::domain::persistence::models::UrlPair;
 
 pub trait UrlShortenerServiceAlg {
-    fn store_long_url_and_get_short_url(&mut self, long_url: url::LongUrl) -> Result<url::ShortUrl, domain_errors::ServiceError>;
+    fn store_long_url_and_get_short_url(&mut self, long_url: objects::LongUrl) -> Result<objects::ShortUrl, domain_errors::ServiceError>;
 
     fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::ServiceError>;
 
-    fn get_long_url_with_short(&self, short_url: url::ShortUrl) -> Result<Option<url::LongUrl>, domain_errors::ServiceError>;
+    fn get_long_url_with_short(&self, short_url: objects::ShortUrl) -> Result<Option<objects::LongUrl>, domain_errors::ServiceError>;
 }
 
 pub struct UrlShortenerService {
@@ -18,8 +18,8 @@ pub struct UrlShortenerService {
 }
 
 impl UrlShortenerServiceAlg for UrlShortenerService {
-    fn store_long_url_and_get_short_url(&mut self, long_url: url::LongUrl) -> Result<url::ShortUrl, domain_errors::ServiceError> {
-        let short_url_path = url::ShortUrl(Self::generate_alphanumeric_string(5));
+    fn store_long_url_and_get_short_url(&mut self, long_url: objects::LongUrl) -> Result<objects::ShortUrl, domain_errors::ServiceError> {
+        let short_url_path = objects::ShortUrl(Self::generate_alphanumeric_string(5));
         self.db.store(long_url, short_url_path.clone())?; // the '?' unwraps the result it exits the function if the result is an error
         Ok(short_url_path)
     }
@@ -28,7 +28,7 @@ impl UrlShortenerServiceAlg for UrlShortenerService {
         Ok(self.db.get_all()?)
     }
 
-    fn get_long_url_with_short(&self, short_url: url::ShortUrl) -> Result<Option<url::LongUrl>, domain_errors::ServiceError> {
+    fn get_long_url_with_short(&self, short_url: objects::ShortUrl) -> Result<Option<objects::LongUrl>, domain_errors::ServiceError> {
         Ok(self.db.get_long_url_with_short_url(short_url)?)
     }
 }

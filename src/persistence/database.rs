@@ -1,6 +1,6 @@
 use crate::domain::errors::domain_errors;
 use crate::domain::persistence::models;
-use crate::domain::types::url;
+use crate::domain::types::objects;
 use crate::schema::urls::dsl::urls as url_table;
 use crate::schema::urls::{long_url as long_url_column, short_url as short_url_column};
 
@@ -13,15 +13,15 @@ use std::sync::Arc;
 pub trait DatabaseAlg: Send + Sync {
     fn store(
         &self,
-        long_url_value: url::LongUrl,
-        short_url_value: url::ShortUrl,
+        long_url_value: objects::LongUrl,
+        short_url_value: objects::ShortUrl,
     ) -> Result<(), domain_errors::StorageError>;
     fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError>;
     // fn get_all(&self) -> Vec<(url::LongUrl, url::ShortUrl)>;
     fn get_long_url_with_short_url(
         &self,
-        short_url: url::ShortUrl,
-    ) -> Result<Option<url::LongUrl>, domain_errors::StorageError>;
+        short_url: objects::ShortUrl,
+    ) -> Result<Option<objects::LongUrl>, domain_errors::StorageError>;
 }
 
 pub struct UrlDatabase {
@@ -31,8 +31,8 @@ pub struct UrlDatabase {
 impl DatabaseAlg for UrlDatabase {
     fn store(
         &self,
-        long_url_value: url::LongUrl,
-        short_url_value: url::ShortUrl,
+        long_url_value: objects::LongUrl,
+        short_url_value: objects::ShortUrl,
     ) -> Result<(), domain_errors::StorageError> {
         // Get connection with proper error handling
         let mut conn = self
@@ -70,8 +70,8 @@ impl DatabaseAlg for UrlDatabase {
 
     fn get_long_url_with_short_url(
         &self,
-        short_url_value: url::ShortUrl,
-    ) -> Result<Option<url::LongUrl>, domain_errors::StorageError> {
+        short_url_value: objects::ShortUrl,
+    ) -> Result<Option<objects::LongUrl>, domain_errors::StorageError> {
         let mut conn = self
             .connection
             .get()

@@ -1,6 +1,6 @@
 use crate::domain::requests::objects::ShortenUrlRequest;
 use crate::domain::responses::objects::UrlPairResponse;
-use crate::domain::types::url;
+use crate::domain::types::objects;
 use crate::services::url_shortener_service::{UrlShortenerService, UrlShortenerServiceAlg};
 use actix_web::web::Redirect;
 use actix_web::Either;
@@ -81,7 +81,7 @@ async fn shorten(
 #[get("/{short_url_path}")]
 async fn redirect_to_long_url(
     service: web::Data<Mutex<UrlShortenerService>>,
-    path: web::Path<url::ShortUrl>,
+    path: web::Path<objects::ShortUrl>,
 ) -> impl Responder {
     let result = service
         .lock()

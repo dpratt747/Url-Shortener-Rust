@@ -1,6 +1,6 @@
 use diesel::prelude::*;
 use serde::Serialize;
-use crate::domain::types::url;
+use crate::domain::types::objects;
 
 
 #[derive(Insertable)]
@@ -8,8 +8,8 @@ use crate::domain::types::url;
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[allow(dead_code)]
 pub struct InsertUrls {
-    pub long_url: url::LongUrl,
-    pub short_url: url::ShortUrl
+    pub long_url: objects::LongUrl,
+    pub short_url: objects::ShortUrl
 }
 
 #[derive(Queryable, Selectable)]
@@ -18,13 +18,13 @@ pub struct InsertUrls {
 #[allow(dead_code)]
 pub struct Urls {
     pub id: i32,
-    pub long_url: url::LongUrl,
-    pub short_url: url::ShortUrl,
+    pub long_url: objects::LongUrl,
+    pub short_url: objects::ShortUrl,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Queryable, Serialize)]
 pub struct UrlPair {
-    pub long_url: url::LongUrl,
-    pub short_url: url::ShortUrl
+    pub long_url: objects::LongUrl,
+    pub short_url: objects::ShortUrl
 }

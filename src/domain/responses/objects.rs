@@ -1,11 +1,11 @@
 use serde::Serialize;
 use crate::domain::persistence::models::UrlPair;
-use crate::domain::types::url;
+use crate::domain::types::objects;
 
 #[derive(Debug, Serialize)]
 pub struct UrlPairResponse {
-    pub long_url: url::LongUrl,
-    pub short_url: url::ShortUrl,
+    pub long_url: objects::LongUrl,
+    pub short_url: objects::ShortUrl,
 }
 
 impl From<UrlPair> for UrlPairResponse {
