@@ -1,64 +1,96 @@
-use chrono::{DateTime, Duration, Local};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use crate::domain::errors::domain_errors;
+use crate::domain::persistence::models;
+use crate::domain::types::url;
+use crate::schema::urls::dsl::urls as url_table;
+use crate::schema::urls::{long_url as long_url_column, short_url as short_url_column};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
-pub(crate) struct ShortUrl(pub(crate) String);
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
-pub(crate) struct LongUrl(pub(crate) String);
+use crate::domain::persistence::models::UrlPair;
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, Pool};
+use diesel::PgConnection;
+use std::sync::Arc;
 
 pub trait DatabaseAlg: Send + Sync {
-    fn store(&mut self, long_url: LongUrl, short_url: ShortUrl);
-    fn get_all_within_cutoff_time(&self) -> HashMap<LongUrl, ShortUrl>;
-    fn get_long_url_with_short_url_within_cutoff_time(&self, short_url: ShortUrl) -> Option<LongUrl>;
+    fn store(
+        &self,
+        long_url_value: url::LongUrl,
+        short_url_value: url::ShortUrl,
+    ) -> Result<(), domain_errors::StorageError>;
+    fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError>;
+    // fn get_all(&self) -> Vec<(url::LongUrl, url::ShortUrl)>;
+    fn get_long_url_with_short_url(
+        &self,
+        short_url: url::ShortUrl,
+    ) -> Result<Option<url::LongUrl>, domain_errors::StorageError>;
 }
 
-#[derive(Clone)]
-pub struct InMemoryDatabase {
-    store: HashMap<LongUrl, (ShortUrl, DateTime<Local>)>,
+pub struct UrlDatabase {
+    connection: Arc<Pool<ConnectionManager<PgConnection>>>,
 }
 
-impl DatabaseAlg for InMemoryDatabase {
-    fn store(&mut self, long_url: LongUrl, short_url: ShortUrl) -> () {
-        // save datetime.now
-        self.store.insert(long_url, (short_url, Local::now()));
+impl DatabaseAlg for UrlDatabase {
+    fn store(
+        &self,
+        long_url_value: url::LongUrl,
+        short_url_value: url::ShortUrl,
+    ) -> Result<(), domain_errors::StorageError> {
+        // Get connection with proper error handling
+        let mut conn = self
+            .connection
+            .get()
+            .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
+
+        let insert_url = models::InsertUrls {
+            long_url: long_url_value,
+            short_url: short_url_value,
+        };
+
+        // Execute query with proper error handling
+        diesel::insert_into(url_table)
+            .values(&insert_url)
+            .execute(&mut conn)
+            .map_err(|err| domain_errors::StorageError::from(err))?;
+
+        Ok(())
     }
 
-    fn get_all_within_cutoff_time(&self) -> HashMap<LongUrl, ShortUrl> {
-        let cutoff = Local::now() - Self::CUTOFF_DURATION;
+    fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError> {
+        let mut conn = self
+            .connection
+            .get()
+            .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-        self.store
-            .clone()
-            .into_iter()
-            .filter(|(_, (_, timestamp))| *timestamp >= cutoff)
-            .map(|(long_url, (short_url, _))| (long_url, short_url))
-            .collect()
+        let results = url_table
+            .select((long_url_column, short_url_column))
+            .load::<UrlPair>(&mut conn)
+            .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))?;
+
+        Ok(results)
     }
 
-    fn get_long_url_with_short_url_within_cutoff_time(&self, short_url: ShortUrl) -> Option<LongUrl> {
-        let cutoff = Local::now() - Self::CUTOFF_DURATION;
+    fn get_long_url_with_short_url(
+        &self,
+        short_url_value: url::ShortUrl,
+    ) -> Result<Option<url::LongUrl>, domain_errors::StorageError> {
+        let mut conn = self
+            .connection
+            .get()
+            .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-        self.store
-            .iter()
-            .filter(|(_, (_, timestamp))| *timestamp >= cutoff)
-            .find_map(|(key, (url, _))| {
-                if url == &short_url {
-                    Some(key.clone())
-                } else {
-                    None
-                }
-            })
+        let res = url_table
+            .filter(short_url_column.eq(&short_url_value))
+            .select(long_url_column)
+            .first(&mut conn)
+            .optional()
+            .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))?;
+
+        Ok(res)
     }
 }
 
-impl InMemoryDatabase {
-    const CUTOFF_DURATION: Duration = Duration::minutes(30);
-
+impl UrlDatabase {
     // like a companion object
-    pub fn new(in_memory_store: HashMap<LongUrl, (ShortUrl, DateTime<Local>)>) -> Self {
-        InMemoryDatabase {
-            store: in_memory_store,
-        }
+    pub fn new(conn: Arc<Pool<ConnectionManager<PgConnection>>>) -> Self {
+        Self { connection: conn }
     }
 }

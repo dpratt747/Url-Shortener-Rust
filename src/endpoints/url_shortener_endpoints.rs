@@ -1,11 +1,12 @@
+use crate::domain::requests::objects::ShortenUrlRequest;
+use crate::domain::responses::objects::UrlPairResponse;
+use crate::domain::types::url;
 use crate::services::url_shortener_service::{UrlShortenerService, UrlShortenerServiceAlg};
 use actix_web::web::Redirect;
 use actix_web::Either;
 use actix_web::{get, post, web, HttpResponse, Responder};
-use serde::Deserialize;
 use std::sync::Mutex;
 use utoipa::OpenApi;
-use crate::persistence::database::{LongUrl, ShortUrl};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -14,12 +15,6 @@ use crate::persistence::database::{LongUrl, ShortUrl};
 )]
 pub struct ApiDoc;
 // https://chat.deepseek.com/a/chat/s/48e4c1e4-630e-4853-a228-66f5408de5a7
-
-#[allow(non_snake_case)]
-#[derive(Deserialize, utoipa::ToSchema)]
-struct ShortenUrlRequest {
-    longUrl: LongUrl,
-}
 
 #[utoipa::path(
     get,
@@ -30,8 +25,19 @@ struct ShortenUrlRequest {
 )]
 #[get("/all")]
 async fn get_all(service: web::Data<Mutex<UrlShortenerService>>) -> impl Responder {
-    let urls = service.lock().unwrap().get_all();
-    HttpResponse::Ok().json(urls)
+    match service.lock().unwrap().get_all() {
+        Ok(url_response) => {
+            let url_response_objects: Vec<UrlPairResponse> = url_response
+                .into_iter()
+                .map(|url| {
+                    let response_object: UrlPairResponse = url.into();
+                    response_object
+                })
+                .collect();
+            HttpResponse::Ok().json(url_response_objects)
+        }
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+    }
 }
 
 #[utoipa::path(
@@ -47,13 +53,18 @@ async fn shorten(
     service: web::Data<Mutex<UrlShortenerService>>,
     info: web::Json<ShortenUrlRequest>,
 ) -> impl Responder {
-    let short_url = service
+    let response = service
         .lock()
         .unwrap()
-        .store_long_url_and_get_short_url(info.longUrl.clone())
-        .0;
-    let full_endpoint = format!("http://localhost:8080/{short_url}");
-    HttpResponse::Created().json(full_endpoint)
+        .store_long_url_and_get_short_url(info.longUrl.clone());
+
+    match response {
+        Ok(url) => {
+            let full_endpoint = format!("http://localhost:8080/{url}");
+            HttpResponse::Created().json(full_endpoint)
+        }
+        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+    }
 }
 
 #[utoipa::path(
@@ -70,15 +81,21 @@ async fn shorten(
 #[get("/{short_url_path}")]
 async fn redirect_to_long_url(
     service: web::Data<Mutex<UrlShortenerService>>,
-    path: web::Path<ShortUrl>,
+    path: web::Path<url::ShortUrl>,
 ) -> impl Responder {
-    let long_url_opt = service
+    let result = service
         .lock()
         .unwrap()
         .get_long_url_with_short(path.into_inner());
 
-    match long_url_opt {
-        Some(long_url) => Either::Right(Redirect::to(long_url.0).temporary()),
-        None => Either::Left(HttpResponse::BadRequest().json("Url not found. Might have expired or it was not created")),
+    match result {
+        Ok(long_url_opt) => match long_url_opt {
+            Some(long_url) => Either::Right(Redirect::to(long_url.0).temporary()),
+            None => Either::Left(
+                HttpResponse::BadRequest()
+                    .json("Url not found. Might have expired or it was not created"),
+            ),
+        },
+        Err(e) => Either::Left(HttpResponse::InternalServerError().body(e.to_string())),
     }
 }
