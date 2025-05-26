@@ -20,7 +20,6 @@ pub trait DatabaseAlg: Send + Sync {
         short_url_value: objects::ShortUrl,
     ) -> Result<(), domain_errors::StorageError>;
     async fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError>;
-    // fn get_all(&self) -> Vec<(url::LongUrl, url::ShortUrl)>;
     async fn get_long_url_with_short_url(
         &self,
         short_url: objects::ShortUrl,

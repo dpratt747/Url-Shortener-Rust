@@ -32,10 +32,7 @@ async fn get_all(service: web::Data<Arc<Mutex<UrlShortenerService>>>) -> impl Re
         Ok(url_response) => {
             let url_response_objects: Vec<UrlPairResponse> = url_response
                 .into_iter()
-                .map(|url| {
-                    let response_object: UrlPairResponse = url.into();
-                    response_object
-                })
+                .map(UrlPairResponse::from)
                 .collect();
             HttpResponse::Ok().json(url_response_objects)
         }
