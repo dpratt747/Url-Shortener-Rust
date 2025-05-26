@@ -21,7 +21,8 @@ pub struct ApiDoc;
     get,
     path = "/v1/all",
     responses(
-        (status = 200, description = "Success response")
+        (status = 200, description = "Success response"),
+        (status = 500, description = "Some internal error occurred"),
     )
 )]
 #[get("/all")]
@@ -45,7 +46,8 @@ async fn get_all(service: web::Data<Arc<Mutex<UrlShortenerService>>>) -> impl Re
     path = "/v1/shorten",
     request_body = ShortenUrlRequest,
     responses(
-        (status = 200, description = "Success response")
+        (status = 201, description = "Success response"),
+        (status = 500, description = "Some internal error occurred"),
     )
 )]
 #[post("/shorten")]
@@ -76,7 +78,8 @@ async fn shorten(
     ),
     responses(
         (status = 302, description = "Redirect to long URL"),
-        (status = 400, description = "URL not found")
+        (status = 400, description = "Long URL not found"),
+        (status = 500, description = "Some internal error occurred"),
     )
 )]
 #[get("/{short_url_path}")]
@@ -95,7 +98,7 @@ async fn redirect_to_long_url(
             Some(long_url) => Either::Right(Redirect::to(long_url.0).temporary()),
             None => Either::Left(
                 HttpResponse::BadRequest()
-                    .json("Url not found. Might have expired or it was not created"),
+                    .json("Long Url not found. Might have expired or it was not created"),
             ),
         },
         Err(e) => Either::Left(HttpResponse::InternalServerError().body(e.to_string())),

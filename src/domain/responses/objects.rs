@@ -2,7 +2,7 @@ use serde::Serialize;
 use crate::domain::persistence::models::UrlPair;
 use crate::domain::types::objects;
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub struct UrlPairResponse {
     pub long_url: objects::LongUrl,
     pub short_url: objects::ShortUrl,
