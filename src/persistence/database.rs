@@ -63,9 +63,8 @@ impl DatabaseAlg for UrlDatabase {
             let mut conn = conn.get()
                 .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-            url_table
-                .select((long_url_column, short_url_column))
-                .load::<UrlPair>(&mut conn)
+            url_table.select(UrlPair::as_select())
+                .load(&mut conn)
                 .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))
         }).await
         .map_err(|e| domain_errors::StorageError::TaskJoinError(e.to_string()))?
