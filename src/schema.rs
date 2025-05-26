@@ -1,4 +1,6 @@
-// @generated automatically by Diesel CLI.
+// Take the tables from the generated schema_examples.rs (
+//  diesel migration run --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db
+// )
 
 diesel::table! {
     valid_urls (id) {
