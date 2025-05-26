@@ -13,3 +13,4 @@ chrono = "0.4.41"
 tokio = "1.45.0"
 diesel = { version = "2.2.0", features = ["postgres", "chrono", "r2d2"] }
 diesel_migrations = "2.2.0"
+async-trait = "0.1.88"

@@ -9,16 +9,19 @@ use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
 use std::sync::Arc;
+use async_trait::async_trait;
+use tokio::task::spawn_blocking;
 
+#[async_trait]
 pub trait DatabaseAlg: Send + Sync {
-    fn store(
+    async fn store(
         &self,
         long_url_value: objects::LongUrl,
         short_url_value: objects::ShortUrl,
     ) -> Result<(), domain_errors::StorageError>;
-    fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError>;
+    async fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError>;
     // fn get_all(&self) -> Vec<(url::LongUrl, url::ShortUrl)>;
-    fn get_long_url_with_short_url(
+    async fn get_long_url_with_short_url(
         &self,
         short_url: objects::ShortUrl,
     ) -> Result<Option<objects::LongUrl>, domain_errors::StorageError>;
@@ -28,63 +31,64 @@ pub struct UrlDatabase {
     connection: Arc<Pool<ConnectionManager<PgConnection>>>,
 }
 
+#[async_trait]
 impl DatabaseAlg for UrlDatabase {
-    fn store(
+    async fn store(
         &self,
         long_url_value: objects::LongUrl,
         short_url_value: objects::ShortUrl,
     ) -> Result<(), domain_errors::StorageError> {
-        // Get connection with proper error handling
-        let mut conn = self
-            .connection
-            .get()
-            .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
+        let conn = self.connection.clone();
+        spawn_blocking(move || {
+            let mut conn = conn.get()
+                .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-        let insert_url = models::InsertUrls {
-            long_url: long_url_value,
-            short_url: short_url_value,
-        };
+            let insert_url = models::InsertUrls {
+                long_url: long_url_value,
+                short_url: short_url_value,
+            };
 
-        // Execute query with proper error handling
-        diesel::insert_into(url_table)
-            .values(&insert_url)
-            .execute(&mut conn)
-            .map_err(|err| domain_errors::StorageError::from(err))?;
+            diesel::insert_into(url_table)
+                .values(&insert_url)
+                .execute(&mut conn)
+                .map_err(|err| domain_errors::StorageError::from(err))?;
 
-        Ok(())
+            Ok(())
+        }).await
+        .map_err(|e| domain_errors::StorageError::TaskJoinError(e.to_string()))?
     }
 
-    fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError> {
-        let mut conn = self
-            .connection
-            .get()
-            .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
+    async fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError> {
+        let conn = self.connection.clone();
+        spawn_blocking(move || {
+            let mut conn = conn.get()
+                .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-        let results = url_table
-            .select((long_url_column, short_url_column))
-            .load::<UrlPair>(&mut conn)
-            .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))?;
-
-        Ok(results)
+            url_table
+                .select((long_url_column, short_url_column))
+                .load::<UrlPair>(&mut conn)
+                .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))
+        }).await
+        .map_err(|e| domain_errors::StorageError::TaskJoinError(e.to_string()))?
     }
 
-    fn get_long_url_with_short_url(
+    async fn get_long_url_with_short_url(
         &self,
         short_url_value: objects::ShortUrl,
     ) -> Result<Option<objects::LongUrl>, domain_errors::StorageError> {
-        let mut conn = self
-            .connection
-            .get()
-            .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
+        let conn = self.connection.clone();
+        spawn_blocking(move || {
+            let mut conn = conn.get()
+                .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-        let res = url_table
-            .filter(short_url_column.eq(&short_url_value))
-            .select(long_url_column)
-            .first(&mut conn)
-            .optional()
-            .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))?;
-
-        Ok(res)
+            url_table
+                .filter(short_url_column.eq(&short_url_value))
+                .select(long_url_column)
+                .first(&mut conn)
+                .optional()
+                .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))
+        }).await
+        .map_err(|e| domain_errors::StorageError::TaskJoinError(e.to_string()))?
     }
 }
 

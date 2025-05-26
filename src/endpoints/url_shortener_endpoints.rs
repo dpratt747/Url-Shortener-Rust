@@ -25,7 +25,7 @@ pub struct ApiDoc;
 )]
 #[get("/all")]
 async fn get_all(service: web::Data<Mutex<UrlShortenerService>>) -> impl Responder {
-    match service.lock().unwrap().get_all() {
+    match service.lock().unwrap().get_all().await {
         Ok(url_response) => {
             let url_response_objects: Vec<UrlPairResponse> = url_response
                 .into_iter()
@@ -56,7 +56,7 @@ async fn shorten(
     let response = service
         .lock()
         .unwrap()
-        .store_long_url_and_get_short_url(info.longUrl.clone());
+        .store_long_url_and_get_short_url(info.longUrl.clone()).await;
 
     match response {
         Ok(url) => {
@@ -86,7 +86,8 @@ async fn redirect_to_long_url(
     let result = service
         .lock()
         .unwrap()
-        .get_long_url_with_short(path.into_inner());
+        .get_long_url_with_short(path.into_inner())
+        .await;
 
     match result {
         Ok(long_url_opt) => match long_url_opt {

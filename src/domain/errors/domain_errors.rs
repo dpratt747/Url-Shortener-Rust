@@ -27,6 +27,7 @@ pub enum StorageError {
     DuplicateEntry(String),
     OtherDatabaseError(String),
     SelectionFailed(String),
+    TaskJoinError(String),
     // Add other error variants as needed
 }
 
@@ -37,6 +38,7 @@ impl fmt::Display for StorageError {
             StorageError::DuplicateEntry(msg) => write!(f, "Duplicate entry: {}", msg),
             StorageError::OtherDatabaseError(msg) => write!(f, "Other database error: {}", msg),
             StorageError::SelectionFailed(msg) => write!(f, "Selection failed: {}", msg),
+            StorageError::TaskJoinError(msg) => write!(f, "Task join error: {}", msg),
         }
     }
 }
