@@ -1,5 +1,5 @@
 use crate::domain::errors::domain_errors;
-use crate::domain::persistence::models::UrlPair;
+use crate::domain::persistence::models::GetUrlPair;
 use crate::domain::types::objects;
 use crate::persistence::database::DatabaseAlg;
 use async_trait::async_trait;
@@ -12,7 +12,7 @@ pub trait UrlShortenerServiceAlg {
         &self,
         long_url: objects::LongUrl,
     ) -> Result<objects::ShortUrl, domain_errors::ServiceError>;
-    async fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::ServiceError>;
+    async fn get_all(&self) -> Result<Vec<GetUrlPair>, domain_errors::ServiceError>;
     async fn get_long_url_with_short(
         &self,
         short_url: objects::ShortUrl,
@@ -34,7 +34,7 @@ impl UrlShortenerServiceAlg for UrlShortenerService {
         Ok(short_url_path)
     }
 
-    async fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::ServiceError> {
+    async fn get_all(&self) -> Result<Vec<GetUrlPair>, domain_errors::ServiceError> {
         Ok(self.db.get_all().await?)
     }
 

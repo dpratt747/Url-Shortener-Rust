@@ -4,7 +4,7 @@ use crate::domain::types::objects;
 use crate::schema::urls::dsl::urls as url_table;
 use crate::schema::urls::{long_url as long_url_column, short_url as short_url_column};
 
-use crate::domain::persistence::models::UrlPair;
+use crate::domain::persistence::models::GetUrlPair;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel::PgConnection;
@@ -19,7 +19,7 @@ pub trait DatabaseAlg: Send + Sync {
         long_url_value: objects::LongUrl,
         short_url_value: objects::ShortUrl,
     ) -> Result<(), domain_errors::StorageError>;
-    async fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError>;
+    async fn get_all(&self) -> Result<Vec<GetUrlPair>, domain_errors::StorageError>;
     async fn get_long_url_with_short_url(
         &self,
         short_url: objects::ShortUrl,
@@ -57,13 +57,13 @@ impl DatabaseAlg for UrlDatabase {
         .map_err(|e| domain_errors::StorageError::TaskJoinError(e.to_string()))?
     }
 
-    async fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::StorageError> {
+    async fn get_all(&self) -> Result<Vec<GetUrlPair>, domain_errors::StorageError> {
         let conn = self.connection.clone();
         spawn_blocking(move || {
             let mut conn = conn.get()
                 .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-            url_table.select(UrlPair::as_select())
+            url_table.select(GetUrlPair::as_select())
                 .load(&mut conn)
                 .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))
         }).await

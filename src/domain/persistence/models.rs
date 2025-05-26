@@ -12,7 +12,7 @@ pub struct InsertUrls {
 #[derive(Queryable, Selectable)]
 #[diesel(table_name = crate::schema::urls)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct UrlPair {
+pub struct GetUrlPair {
     pub long_url: objects::LongUrl,
     pub short_url: objects::ShortUrl,
 }
