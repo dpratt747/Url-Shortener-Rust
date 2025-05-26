@@ -37,3 +37,7 @@ docker run -d --name url_shortener_rust_container url_shortener_rust
 docker rm -f $(docker ps -aq)
 docker system prune -af
 ```
+
+---
+
+- URLs expire after 30 minutes

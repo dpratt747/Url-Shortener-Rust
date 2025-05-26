@@ -1,8 +1,8 @@
 use crate::domain::errors::domain_errors;
 use crate::domain::persistence::models;
 use crate::domain::types::objects;
-use crate::schema::urls::dsl::urls as url_table;
-use crate::schema::urls::{long_url as long_url_column, short_url as short_url_column};
+use crate::schema::valid_urls::dsl::valid_urls as valid_urls_table;
+use crate::schema::valid_urls::{long_url as long_url_column, short_url as short_url_column};
 
 use crate::domain::persistence::models::GetUrlPair;
 use diesel::prelude::*;
@@ -47,7 +47,7 @@ impl DatabaseAlg for UrlDatabase {
                 short_url: short_url_value,
             };
 
-            diesel::insert_into(url_table)
+            diesel::insert_into(valid_urls_table)
                 .values(&insert_url)
                 .execute(&mut conn)
                 .map_err(|err| domain_errors::StorageError::from(err))?;
@@ -63,7 +63,7 @@ impl DatabaseAlg for UrlDatabase {
             let mut conn = conn.get()
                 .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-            url_table.select(GetUrlPair::as_select())
+            valid_urls_table.select(GetUrlPair::as_select())
                 .load(&mut conn)
                 .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))
         }).await
@@ -79,7 +79,7 @@ impl DatabaseAlg for UrlDatabase {
             let mut conn = conn.get()
                 .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-            url_table
+            valid_urls_table
                 .filter(short_url_column.eq(&short_url_value))
                 .select(long_url_column)
                 .first(&mut conn)

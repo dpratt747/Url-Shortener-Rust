@@ -1,5 +1,6 @@
-// @generated automatically by Diesel CLI.
+//
 
+// schema for the urls view table
 diesel::table! {
     valid_urls (id) {
         id -> Int4,
