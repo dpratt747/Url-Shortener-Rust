@@ -15,7 +15,8 @@ use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use std::env;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use std::time::Duration;
 use tokio::time::sleep;
 use utoipa::OpenApi;
@@ -42,8 +43,7 @@ async fn main() -> std::io::Result<()> {
     let shared_pool = Arc::new(pool);
     let url_database = UrlDatabase::new(Arc::clone(&shared_pool));
 
-    let service = UrlShortenerService::new(Box::new(url_database)); // todo: remove clone once testing has finished
-    let service_data = web::Data::new(Mutex::new(service));
+    let service = Arc::new(Mutex::new(UrlShortenerService::new(Box::new(url_database))));
 
     // Default to localhost, use 0.0.0.0 if IN_DOCKER is set
     let addr = if env::var("IN_DOCKER").is_ok() {
@@ -56,7 +56,7 @@ async fn main() -> std::io::Result<()> {
 
     let server = HttpServer::new(move || {
         App::new()
-            .app_data(service_data.clone())
+            .app_data(web::Data::new(Arc::clone(&service)))
             .service(web::scope("/v1").service(get_all).service(shorten))
             .service(redirect_to_long_url)
             .service(

@@ -5,8 +5,9 @@ use crate::services::url_shortener_service::{UrlShortenerService, UrlShortenerSe
 use actix_web::web::Redirect;
 use actix_web::Either;
 use actix_web::{get, post, web, HttpResponse, Responder};
-use std::sync::Mutex;
+use tokio::sync::Mutex;
 use utoipa::OpenApi;
+use std::sync::Arc;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -24,8 +25,10 @@ pub struct ApiDoc;
     )
 )]
 #[get("/all")]
-async fn get_all(service: web::Data<Mutex<UrlShortenerService>>) -> impl Responder {
-    match service.lock().unwrap().get_all().await {
+async fn get_all(service: web::Data<Arc<Mutex<UrlShortenerService>>>) -> impl Responder {
+    let service = service.lock().await;
+
+    match service.get_all().await {
         Ok(url_response) => {
             let url_response_objects: Vec<UrlPairResponse> = url_response
                 .into_iter()
@@ -50,13 +53,14 @@ async fn get_all(service: web::Data<Mutex<UrlShortenerService>>) -> impl Respond
 )]
 #[post("/shorten")]
 async fn shorten(
-    service: web::Data<Mutex<UrlShortenerService>>,
+    service: web::Data<Arc<Mutex<UrlShortenerService>>>,
     info: web::Json<ShortenUrlRequest>,
 ) -> impl Responder {
+    let service = service.lock().await;
+    
     let response = service
-        .lock()
-        .unwrap()
-        .store_long_url_and_get_short_url(info.longUrl.clone()).await;
+        .store_long_url_and_get_short_url(info.longUrl.clone())
+        .await;
 
     match response {
         Ok(url) => {
@@ -80,12 +84,12 @@ async fn shorten(
 )]
 #[get("/{short_url_path}")]
 async fn redirect_to_long_url(
-    service: web::Data<Mutex<UrlShortenerService>>,
+    service: web::Data<Arc<Mutex<UrlShortenerService>>>,
     path: web::Path<objects::ShortUrl>,
 ) -> impl Responder {
+    let service = service.lock().await;
+
     let result = service
-        .lock()
-        .unwrap()
         .get_long_url_with_short(path.into_inner())
         .await;
 

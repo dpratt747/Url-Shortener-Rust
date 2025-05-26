@@ -8,7 +8,7 @@ use crate::domain::persistence::models::UrlPair;
 
 #[async_trait]
 pub trait UrlShortenerServiceAlg {
-    async fn store_long_url_and_get_short_url(&mut self, long_url: objects::LongUrl) -> Result<objects::ShortUrl, domain_errors::ServiceError>;
+    async fn store_long_url_and_get_short_url(&self, long_url: objects::LongUrl) -> Result<objects::ShortUrl, domain_errors::ServiceError>;
     async fn get_all(&self) -> Result<Vec<UrlPair>, domain_errors::ServiceError>;
     async fn get_long_url_with_short(&self, short_url: objects::ShortUrl) -> Result<Option<objects::LongUrl>, domain_errors::ServiceError>;
 }
@@ -19,7 +19,7 @@ pub struct UrlShortenerService {
 
 #[async_trait]
 impl UrlShortenerServiceAlg for UrlShortenerService {
-    async fn store_long_url_and_get_short_url(&mut self, long_url: objects::LongUrl) -> Result<objects::ShortUrl, domain_errors::ServiceError> {
+    async fn store_long_url_and_get_short_url(&self, long_url: objects::LongUrl) -> Result<objects::ShortUrl, domain_errors::ServiceError> {
         let short_url_path = objects::ShortUrl(Self::generate_alphanumeric_string(5));
         self.db.store(long_url, short_url_path.clone()).await?;
         Ok(short_url_path)
