@@ -19,7 +19,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use std::time::Duration;
 use tokio::time::sleep;
-use utoipa::OpenApi;`
+use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
 #[actix_web::main]
