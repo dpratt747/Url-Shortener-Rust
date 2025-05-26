@@ -2,7 +2,6 @@ mod config;
 mod domain;
 mod endpoints;
 mod persistence;
-mod schema;
 mod services;
 
 use crate::config::db_config::DbConfig;

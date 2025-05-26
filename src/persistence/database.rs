@@ -1,8 +1,8 @@
 use crate::domain::errors::domain_errors;
 use crate::domain::persistence::models;
 use crate::domain::types::objects;
-use crate::schema::valid_urls::dsl::valid_urls as valid_urls_table;
-use crate::schema::valid_urls::{long_url as long_url_column, short_url as short_url_column};
+use crate::persistence::schema::valid_urls::dsl::valid_urls as valid_urls_table;
+use crate::persistence::schema::valid_urls::{long_url as long_url_column, short_url as short_url_column, created_at as created_at_column };
 
 use crate::domain::persistence::models::GetUrlPair;
 use diesel::prelude::*;
@@ -64,6 +64,7 @@ impl DatabaseAlg for UrlDatabase {
                 .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
             valid_urls_table.select(GetUrlPair::as_select())
+                .then_order_by(created_at_column.asc())
                 .load(&mut conn)
                 .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))
         }).await

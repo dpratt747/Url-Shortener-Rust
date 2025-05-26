@@ -54,4 +54,6 @@ Add triggers so that inserts and deletes can be done on the view:
 
 ```bash
 diesel print-schema --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db > src/schema.rs
+diesel migration revert --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db
+diesel migration run --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db
 ```
