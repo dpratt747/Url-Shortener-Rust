@@ -10,10 +10,7 @@ RUN cargo install --path .
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
-    libssl-dev \
-    ca-certificates \
-    libpq5 \
-    && rm -rf /var/lib/apt/lists/*
+    libpq5
 
 COPY --from=builder /usr/local/cargo/bin/UrlShortener /usr/local/bin/UrlShortener
 
