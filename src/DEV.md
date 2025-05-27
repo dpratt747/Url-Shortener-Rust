@@ -57,3 +57,8 @@ diesel print-schema --database-url=postgres://postgres:postgres@127.0.0.1/url-sh
 diesel migration revert --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db
 diesel migration run --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db
 ```
+
+Build and verify:
+```bash
+docker build -t url_shortener_rust . && cargo test --manifest-path ../url-shortener-cucumber/Cargo.toml
+```
