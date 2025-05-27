@@ -13,6 +13,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS valid_urls_insert_trigger ON urls_within_designated_mins CASCADE;
+
 CREATE TRIGGER valid_urls_insert_trigger
     INSTEAD OF INSERT ON urls_within_designated_mins
     FOR EACH ROW EXECUTE FUNCTION insert_into_urls_table();
