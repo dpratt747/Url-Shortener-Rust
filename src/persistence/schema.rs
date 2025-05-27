@@ -3,7 +3,7 @@
 // )
 
 diesel::table! {
-    valid_urls (id) {
+    urls_within_designated_mins (id) {
         id -> Int4,
         long_url -> Text,
         #[max_length = 255]

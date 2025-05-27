@@ -39,7 +39,7 @@ match e {
 create a view that lists only valid entries and query that view instead of directly querying the users table
 
 new migration:
-CREATE VIEW valid_urls AS
+CREATE VIEW urls_within_designated_mins AS
 SELECT *
 FROM urls
 WHERE created_at >= NOW() - INTERVAL '30 minutes';
@@ -53,7 +53,7 @@ Add triggers so that inserts and deletes can be done on the view:
 ```
 
 ```bash
-diesel print-schema --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db > src/schema.rs
+diesel print-schema --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db > src/persistence/schema_example.rs
 diesel migration revert --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db
 diesel migration run --database-url=postgres://postgres:postgres@127.0.0.1/url-shortener-db
 ```

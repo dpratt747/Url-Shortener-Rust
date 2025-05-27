@@ -1,6 +1,6 @@
 -- Your SQL goes here
 
-CREATE VIEW valid_urls AS
+CREATE OR REPLACE VIEW urls_within_designated_mins AS
 SELECT *
 FROM urls
 WHERE created_at >= NOW() - INTERVAL '30 minutes';
@@ -14,5 +14,5 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER valid_urls_insert_trigger
-    INSTEAD OF INSERT ON valid_urls
+    INSTEAD OF INSERT ON urls_within_designated_mins
     FOR EACH ROW EXECUTE FUNCTION insert_into_urls_table();

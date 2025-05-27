@@ -1,8 +1,8 @@
 use crate::domain::errors::domain_errors;
 use crate::domain::persistence::models;
 use crate::domain::types::objects;
-use crate::persistence::schema::valid_urls::dsl::valid_urls as valid_urls_table;
-use crate::persistence::schema::valid_urls::{long_url as long_url_column, short_url as short_url_column, created_at as created_at_column };
+use crate::persistence::schema::urls_within_designated_mins::dsl::urls_within_designated_mins as urls_table;
+use crate::persistence::schema::urls_within_designated_mins::{long_url as long_url_column, short_url as short_url_column, created_at as created_at_column };
 
 use crate::domain::persistence::models::GetUrlPair;
 use diesel::prelude::*;
@@ -47,7 +47,7 @@ impl DatabaseAlg for UrlDatabase {
                 short_url: short_url_value,
             };
 
-            diesel::insert_into(valid_urls_table)
+            diesel::insert_into(urls_table)
                 .values(&insert_url)
                 .execute(&mut conn)
                 .map_err(|err| domain_errors::StorageError::from(err))?;
@@ -63,7 +63,7 @@ impl DatabaseAlg for UrlDatabase {
             let mut conn = conn.get()
                 .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-            valid_urls_table.select(GetUrlPair::as_select())
+            urls_table.select(GetUrlPair::as_select())
                 .then_order_by(created_at_column.asc())
                 .load(&mut conn)
                 .map_err(|err| domain_errors::StorageError::SelectionFailed(err.to_string()))
@@ -80,7 +80,7 @@ impl DatabaseAlg for UrlDatabase {
             let mut conn = conn.get()
                 .map_err(|e| domain_errors::StorageError::ConnectionFailed(e.to_string()))?;
 
-            valid_urls_table
+            urls_table
                 .filter(short_url_column.eq(&short_url_value))
                 .select(long_url_column)
                 .first(&mut conn)
