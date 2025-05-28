@@ -1,5 +1,7 @@
 -- Your SQL goes here
 
+CREATE INDEX idx_urls_created_at ON urls(created_at);
+
 CREATE OR REPLACE VIEW urls_within_designated_mins AS
 SELECT *
 FROM urls

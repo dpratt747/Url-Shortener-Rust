@@ -5,9 +5,9 @@ use crate::services::url_shortener_service::{UrlShortenerService, UrlShortenerSe
 use actix_web::web::Redirect;
 use actix_web::Either;
 use actix_web::{get, post, web, HttpResponse, Responder};
+use std::sync::Arc;
 use tokio::sync::Mutex;
 use utoipa::OpenApi;
-use std::sync::Arc;
 
 #[derive(OpenApi)]
 #[openapi(
@@ -56,7 +56,7 @@ async fn shorten(
     info: web::Json<ShortenUrlRequest>,
 ) -> impl Responder {
     let service = service.lock().await;
-    
+
     let response = service
         .store_long_url_and_get_short_url(info.longUrl.clone())
         .await;
@@ -89,9 +89,7 @@ async fn redirect_to_long_url(
 ) -> impl Responder {
     let service = service.lock().await;
 
-    let result = service
-        .get_long_url_with_short(path.into_inner())
-        .await;
+    let result = service.get_long_url_with_short(path.into_inner()).await;
 
     match result {
         Ok(long_url_opt) => match long_url_opt {
