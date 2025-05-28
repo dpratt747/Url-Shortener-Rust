@@ -20,6 +20,32 @@ diesel migration redo
 ```
 
 ----
+Can pattern match the error types like so:
+```rust
+Err(e) => match e {
+    domain::errors::domain_errors::ServiceError::StorageError(storage_error) => {
+        match storage_error {
+            domain::errors::domain_errors::StorageError::ConnectionFailed(msg) => {
+                Either::Left(HttpResponse::InternalServerError().body(format!("Database connection failed: {}", msg)))
+            },
+            domain::errors::domain_errors::StorageError::DuplicateEntry(msg) => {
+                Either::Left(HttpResponse::InternalServerError().body(format!("Duplicate entry: {}", msg)))
+            },
+            domain::errors::domain_errors::StorageError::SelectionFailed(msg) => {
+                Either::Left(HttpResponse::InternalServerError().body(format!("Selection failed: {}", msg)))
+            },
+            domain::errors::domain_errors::StorageError::TaskJoinError(msg) => {
+                Either::Left(HttpResponse::InternalServerError().body(format!("Task join error: {}", msg)))
+            },
+            domain::errors::domain_errors::StorageError::OtherDatabaseError(msg) => {
+                Either::Left(HttpResponse::InternalServerError().body(format!("Database error: {}", msg)))
+            },
+        }
+    }
+}
+```
+
+
 
 ```rust
 match e {
