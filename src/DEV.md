@@ -21,6 +21,18 @@ diesel migration redo
 
 ----
 Can pattern match the error types like so:
+
+```rust
+match error {
+    ServiceError::StorageError(StorageError::ConnectionFailed(e)) => { }
+    ServiceError::StorageError(StorageError::DuplicateEntry(e)) => { }
+//     add other cases here
+    _ => {} //default case
+
+}
+```
+
+
 ```rust
 Err(e) => match e {
     domain::errors::domain_errors::ServiceError::StorageError(storage_error) => {
