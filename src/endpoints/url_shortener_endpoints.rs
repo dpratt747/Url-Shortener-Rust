@@ -37,7 +37,7 @@ async fn get_all(service: web::Data<Arc<Mutex<UrlShortenerService>>>) -> impl Re
                 .collect();
             HttpResponse::Ok().json(url_response_objects)
         }
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) => HttpResponse::InternalServerError().json(e.to_string()),
     }
 }
 
@@ -66,7 +66,7 @@ async fn shorten(
             let full_endpoint = format!("http://localhost:8080/{url}");
             HttpResponse::Created().json(full_endpoint)
         }
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) => HttpResponse::InternalServerError().json(e.to_string()),
     }
 }
 
@@ -99,6 +99,6 @@ async fn redirect_to_long_url(
                     .json("Long Url not found. Might have expired or it was not created"),
             ),
         },
-        Err(e) => Either::Left(HttpResponse::InternalServerError().body(e.to_string())),
+        Err(e) => Either::Left(HttpResponse::InternalServerError().json(e.to_string())),
     }
 }
