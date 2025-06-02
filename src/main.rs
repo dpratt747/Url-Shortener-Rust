@@ -28,6 +28,7 @@ async fn main() -> std::io::Result<()> {
 
     let manager = ConnectionManager::<PgConnection>::new(db_configuration.url());
     let pool: Pool<ConnectionManager<PgConnection>> = Pool::builder()
+        .connection_timeout(Duration::from_secs(1))
         .build(manager)
         .expect("Failed to create pool");
 
@@ -56,7 +57,9 @@ async fn main() -> std::io::Result<()> {
     let server = HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(Arc::clone(&service)))
-            .service(web::scope("/v1").service(get_all).service(shorten))
+            .service(web::scope("/v1")
+                .service(get_all)
+                .service(shorten))
             .service(redirect_to_long_url)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")

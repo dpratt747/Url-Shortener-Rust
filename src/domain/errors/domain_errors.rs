@@ -28,19 +28,17 @@ pub enum StorageError {
     OtherDatabaseError(String),
     SelectionFailed(String),
     TaskJoinError(String),
-    DatabaseTimeoutError(String),
     // Add other error variants as needed
 }
 
 impl fmt::Display for StorageError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            StorageError::ConnectionFailed(msg) => write!(f, "Connection failed: {}", msg),
+            StorageError::ConnectionFailed(msg) => write!(f, "Database connection failed: {}", msg),
             StorageError::DuplicateEntry(msg) => write!(f, "Duplicate entry: {}", msg),
             StorageError::OtherDatabaseError(msg) => write!(f, "Other database error: {}", msg),
             StorageError::SelectionFailed(msg) => write!(f, "Selection failed: {}", msg),
             StorageError::TaskJoinError(msg) => write!(f, "Task join error: {}", msg),
-            StorageError::DatabaseTimeoutError(msg) => write!(f, "Database timeout: {}", msg),
         }
     }
 }
@@ -51,7 +49,7 @@ impl From<DieselError> for StorageError {
             DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, info) => {
                 let details = info.message().to_string();
                 StorageError::DuplicateEntry(details)
-            },
+            }
             other => StorageError::OtherDatabaseError(other.to_string()),
         }
     }
