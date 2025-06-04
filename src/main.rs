@@ -20,6 +20,7 @@ use std::time::Duration;
 use tokio::time::sleep;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+use actix_cors::Cors;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -54,8 +55,18 @@ async fn main() -> std::io::Result<()> {
 
     println!("Starting server on {}", addr);
 
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+
     let server = HttpServer::new(move || {
         App::new()
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .allow_any_method()
+                    .allow_any_header()
+                    .max_age(3600),
+            )
+            .wrap(actix_web::middleware::Logger::default())
             .app_data(web::Data::new(Arc::clone(&service)))
             .service(web::scope("/v1")
                 .service(get_all)
