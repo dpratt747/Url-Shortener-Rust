@@ -53,7 +53,8 @@ impl DatabaseAlg for UrlDatabase {
             diesel::insert_into(urls_table)
                 .values(&insert_url)
                 .execute(&mut conn)
-                .map_err(|err| domain_errors::StorageError::from(err))?;
+                .map_err(domain_errors::StorageError::from)?;
+            // .map_err(|err| domain_errors::StorageError::from(err))?;
 
             Ok(())
         })

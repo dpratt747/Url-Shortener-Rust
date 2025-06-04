@@ -36,10 +36,7 @@ async fn main() -> std::io::Result<()> {
     let mut connection = pool.get().expect("Failed to get connection");
     connection
         .run_pending_migrations(MIGRATIONS)
-        .expect(&format!(
-            "Error running migrations: {}",
-            db_configuration.url()
-        ));
+        .unwrap_or_else(|_| panic!("Error running migrations: {}", db_configuration.url()));
 
     let shared_pool = Arc::new(pool);
     let url_database = UrlDatabase::new(Arc::clone(&shared_pool));
