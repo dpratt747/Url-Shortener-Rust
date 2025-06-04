@@ -9,18 +9,18 @@ use crate::endpoints::url_shortener_endpoints::{get_all, redirect_to_long_url, s
 use crate::services::url_shortener_service::UrlShortenerService;
 
 use crate::persistence::database::UrlDatabase;
+use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use std::env;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use std::time::Duration;
+use tokio::sync::Mutex;
 use tokio::time::sleep;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use actix_cors::Cors;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -68,9 +68,7 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(actix_web::middleware::Logger::default())
             .app_data(web::Data::new(Arc::clone(&service)))
-            .service(web::scope("/v1")
-                .service(get_all)
-                .service(shorten))
+            .service(web::scope("/v1").service(get_all).service(shorten))
             .service(redirect_to_long_url)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")

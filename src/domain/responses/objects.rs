@@ -1,6 +1,6 @@
-use serde::Serialize;
 use crate::domain::persistence::models::GetUrlPair;
 use crate::domain::types::objects;
+use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct UrlPairResponse {

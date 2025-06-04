@@ -1,6 +1,6 @@
-use std::fmt;
 use diesel::{AsExpression, FromSqlRow};
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(
     Debug,
@@ -42,7 +42,6 @@ where
     }
 }
 
-
 #[derive(
     Debug,
     Clone,
@@ -53,14 +52,14 @@ where
     Deserialize,
     utoipa::ToSchema,
     AsExpression,
-    FromSqlRow
+    FromSqlRow,
 )]
 #[diesel(sql_type = diesel::sql_types::Text)]
 pub struct ShortUrl(pub(crate) String);
 
 impl fmt::Display for ShortUrl {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)  // Assuming ShortUrl wraps a String or displayable type
+        write!(f, "{}", self.0) // Assuming ShortUrl wraps a String or displayable type
     }
 }
 

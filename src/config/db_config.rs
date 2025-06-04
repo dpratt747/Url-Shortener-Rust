@@ -7,7 +7,7 @@ pub(crate) struct DbConfig {
     port: String,
     user: String,
     password: String,
-    database_name: String
+    database_name: String,
 }
 
 impl DbConfig {
@@ -22,6 +22,9 @@ impl DbConfig {
     }
 
     pub(crate) fn url(&self) -> String {
-        format!("postgres://{}:{}@{}:{}/{}", self.user, self.password, self.host, self.port, self.database_name)
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.user, self.password, self.host, self.port, self.database_name
+        )
     }
 }
