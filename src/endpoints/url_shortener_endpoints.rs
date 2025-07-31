@@ -93,7 +93,7 @@ async fn redirect_to_long_url(
 
     match result {
         Ok(long_url_opt) => match long_url_opt {
-            Some(long_url) => Either::Right(Redirect::to(long_url.0).temporary()),
+            Some(long_url) => Either::Right(Redirect::to(long_url.0).permanent()),
             None => Either::Left(
                 HttpResponse::BadRequest()
                     .json("Long Url not found. Might have expired or it was not created"),
